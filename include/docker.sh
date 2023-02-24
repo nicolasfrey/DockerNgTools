@@ -93,5 +93,5 @@ dockerRuncli () {
 dockerRunBash () {
    local BASH=${1}
 
-   docker compose run --rm -u "$USER":"$GROUP" nodejs bash -c "${BASH}"
+   docker compose run --rm -u "$USER":"$GROUP" nodejs sh -c "${BASH}"
 }
