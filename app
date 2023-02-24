@@ -39,8 +39,16 @@ init () {
    # Login on artifactory
    dockerLogin
 
+   # Create .npmrc if not exists
+   if [ ! -f "$HOME/.npmrc" ]; then
+      touch ~/.npmrc
+   fi
+
    # Start docker
    dockerStart
+
+   # NPM login on artifactory
+   dockerRuncli npm login --scope="${APP__NPM_SCOPE}" --registry="https://${APP__ARTIFACTORY_PATH}artifactory/api/npm/${APP__NPM_REPOSITORY_PATH}"
 
    # Update()
    echo ""
@@ -73,6 +81,11 @@ update () {
 
 # remove containers, volumes and local images for this project
 destroy () {
+   echo "----> Remove directory"
+   dockerRunBash "rm -rf node_modules"
+   echo " [OK] Directories removed"
+   echo ""
+
    echo "----> Stop and remove docker images"
    dockerStop --destroy
    echo " [OK] Docker images removed"
