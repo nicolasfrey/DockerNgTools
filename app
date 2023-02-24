@@ -78,6 +78,17 @@ destroy () {
    echo " [OK] Docker images removed"
 }
 
+config () {
+   if [[ -z $1 ]]; then
+      packageInit
+   elif [ "$1" == '--destroy' ]; then
+      packageDestroy
+   else
+      displayError "Parameter \"${1}\" is not defined ! \n\n Did you mean one of these? \n    --destroy"
+      exit
+   fi
+}
+
 version () {
    packageVersion
 }
@@ -93,6 +104,7 @@ usage () {
     version                                        Display current version
 
     init                                           Initialize project
+    config --destroy                               Initialize bin/app. Add --destroy for clean project
     destroy                                        Remove all the project Docker containers with their volumes
 
     start --force-recreate                         Start project
@@ -112,7 +124,7 @@ main () {
       exit 0
    fi
 
-   if [[ ! $1 =~ ^(selfupdate|version|init|destroy|start|stop|restart|npm|ng|bash)$ ]]; then
+   if [[ ! $1 =~ ^(selfupdate|version|config|init|destroy|start|stop|restart|npm|ng|bash)$ ]]; then
       echo "$1 is not a supported command"
       exit 1
    fi
