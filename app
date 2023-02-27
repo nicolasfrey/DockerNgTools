@@ -26,7 +26,7 @@ npm () {
 
 # run the Angular console inside the app container
 ng () {
-   dockerRuncli ng "$@"
+   dockerRuncli npm run ng "$@"
 }
 
 # run bash on phpcli
