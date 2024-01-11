@@ -72,20 +72,29 @@ usage () {
    echo "usage: bin/tpl COMMAND [ARGUMENTS]
 
    config                                                            Configure npm registry
-   install --only-theme <theme>                                      Installation des ressources. Use --only-theme for install specific theme.
-   build <projet> --only-theme <theme>                               Compilation d'un projet. Use --only-theme for build specific theme.
-   publish <projet>                                                  Publication d'un projet (${APP__THEMES})
-   deploy <project> --preserve-cache --no-restart                    Déployer le projet en local (dev). Use --preserve-cache for keep cache. Use --no-restart for not restart serve.
+   install --only-theme <theme>                                      Install resources. Use --only-theme to install a specific theme.
+   build <project> --only-theme <theme>                              Build a project. Use --only-theme to build a specific theme.
+   publish <project>                                                 Publish a project
+   deploy <project> --preserve-cache --no-restart                    Deploy the project locally (dev). Use --preserve-cache to keep the cache. Use --no-restart to not restart the server.
 
 ARGUMENTS :
-   projet            Nom du projet à compiler                                    Requis
-                     Valeur possible : $p
-   --only-theme      Installation en ne compilant qu'un theme ou tous            Non requis
-                     Valeur possible : null | $t
+   project           Name of the project to build                           Required
+                     Possible value: $p
+   --only-theme      Install by compiling only one theme or all             Not required
+                     Possible values: null | $t
 
 EXAMPLE :
+   # Basic install
    bin/tpl install
+
+   # Install with only default theme
    bin/tpl install --only-theme default
+
+   # Publish project
+   bin/tpl publish project
+
+   # Publish with only dark theme
+   bin/tpl publish project --only-theme dark
    "
 }
 
