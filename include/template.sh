@@ -46,6 +46,12 @@ deployDefineArgs() {
 deploy() {
    displayMessage "##### START DEPLOY STAGE"
 
+   if [[ -z ${APP__VOLUME_TEMPLATE_DIR} ]]; then
+      displayError "VOLUME_TEMPLATE_DIR is missing in env"
+      exit 1
+   fi
+   local VOLUME_PATH="/home/$USER/${APP__VOLUME_TEMPLATE_DIR}"
+
    if [[ -z ${APP__LOCAL_TEMPLATE_DIR} ]]; then
       displayError "LOCAL_TEMPLATE_DIR is missing in env"
       exit 1
@@ -61,14 +67,14 @@ deploy() {
    if [[ $PRESERVE_CACHE == false ]]; then
       echo '> Suppression du cache npm / angular'
       dockerRuncli npm cache clean --force
-      dockerRunBash "rm -rf ${APP__LOCAL_TEMPLATE_DIR}/app/.angular"
+      dockerRunBash "rm -rf ${VOLUME_PATH}/app/.angular"
       dockerRunBash "rm -rf ./app/.angular"
    fi
 
    PROJECT=$1
    (cd "${APP__LOCAL_TEMPLATE_DIR}" && build "$@")
    dockerRunBash "rm -Rf ./node_modules/${APP__NPM_SCOPE}/${1//'wel-'/}/*"
-   dockerRunBash "cp -R ${APP__LOCAL_TEMPLATE_DIR}/app/dist/${APP__NPM_SCOPE}/${1//'wel-'/}/. ./node_modules/${APP__NPM_SCOPE}/${1//'wel-'/}"
+   dockerRunBash "cp -R ${VOLUME_PATH}/app/dist/${APP__NPM_SCOPE}/${1//'wel-'/}/. ./node_modules/${APP__NPM_SCOPE}/${1//'wel-'/}"
 
    if [[ $RESTART == true ]]; then
       echo '> Redémarrage du service serve'
