@@ -64,17 +64,17 @@ deploy() {
 
    deployDefineArgs "$@"
 
-   if [[ $PRESERVE_CACHE == false ]]; then
-      echo '> Suppression du cache npm / angular'
-      dockerRuncli npm cache clean --force
-      dockerRunBash "rm -rf ${VOLUME_PATH}/app/.angular"
-      dockerRunBash "rm -rf ./app/.angular"
-   fi
-
    PROJECT=$1
    (cd "${APP__LOCAL_TEMPLATE_DIR}" && build "$@")
    dockerRunBash "rm -Rf ./node_modules/${APP__NPM_SCOPE}/${1//'wel-'/}/*"
    dockerRunBash "cp -R ${VOLUME_PATH}/app/dist/${APP__NPM_SCOPE}/${1//'wel-'/}/. ./node_modules/${APP__NPM_SCOPE}/${1//'wel-'/}"
+
+   if [[ $PRESERVE_CACHE == false ]]; then
+      echo '> Suppression du cache npm / angular'
+      dockerRuncli npm cache clean --force
+      dockerRunBash "rm -rf ${VOLUME_PATH}/app/.angular"
+      dockerRunBash "rm -rf ./.angular"
+   fi
 
    if [[ $RESTART == true ]]; then
       echo '> Redémarrage du service serve'
