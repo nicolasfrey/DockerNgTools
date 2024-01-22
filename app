@@ -21,17 +21,17 @@ restart () {
 
 # run npm inside the app container
 npm () {
-   dockerRuncli npm "$@"
+   dockerRunNpm "$@"
 }
 
 # run the Angular console inside the app container
 ng () {
-   dockerRuncli npm run ng "$@"
+   dockerRunNpm "run ng ${*}"
 }
 
 # run bash on phpcli
 bash () {
-   dockerRuncli sh
+   docker compose run --rm -u "$USER":"$GROUP" nodejs sh
 }
 
 # init project
@@ -48,7 +48,7 @@ init () {
    dockerStart
 
    # NPM login on artifactory
-   dockerRuncli npm login --scope="${APP__NPM_SCOPE}" --registry="https://${APP__ARTIFACTORY_PATH}artifactory/api/npm/${APP__NPM_REPOSITORY_PATH}"
+   dockerRunNpm "login --scope=${APP__NPM_SCOPE} --registry=https://${APP__ARTIFACTORY_PATH}artifactory/api/npm/${APP__NPM_REPOSITORY_PATH} --auth-type=legacy"
 
    # Update()
    echo ""
@@ -73,7 +73,7 @@ update () {
    echo ""
 
    echo "----> Install dependency"
-   dockerRuncli npm install || displayError
+   dockerRunNpm install || displayError
    echo " [OK] Dependency installed"
 
    echo ""
