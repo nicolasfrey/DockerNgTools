@@ -5,29 +5,11 @@ source "$(dirname "$0")/include/package.sh"
 source "$(dirname "$0")/include/docker.sh"
 source "$(dirname "$0")/include/template.sh"
 
-createThemeVars() {
-   THEME=''
-   while [ $# -gt 0 ]; do
-      if [[ $1 == "--"* ]]; then
-         v="${1/--/}"
-         if [[ $v = 'only-theme' ]]; then
-            THEME=$2
-         fi
-         shift
-      fi
-      shift
-   done
-}
-
-createProjectVars() {
-   PROJECT=$2
-   PROJECTS=$(cat app/angular.json | jq '.projects | to_entries | .[] | .key')
-   if [[ ! "${PROJECTS[*]}" =~ "\""$PROJECT"\"" ]]; then
-      PROJECT=''
-   fi
-}
-
 checkOrigin() {
+   if [[ $1 == 'new' ]]; then
+      return
+   fi
+
    ISLIB=true
 
    if [[ $(cat app/angular.json | jq -r '.projects | .[] | .projectType') == 'application' ]]; then
@@ -46,55 +28,32 @@ checkOrigin() {
 }
 
 usage () {
-   createProjectVars
-
-   local p=''
-   local t=''
-   local i=0
-   for a in $PROJECTS; do
-      if [[ $i -ne 0 ]]; then
-        p+=" | "
-      fi
-      p+=${a//\"/}
-      ((i=i+1))
-   done;
-
-   i=0
-   for a in $(echo "${APP__THEMES}" | tr ',' "\n"); do
-      if [[ $i -ne 0 ]]; then
-        t+=" | "
-      fi
-      t+=${a//\"/}
-      ((i=i+1))
-   done;
-
-
    echo "usage: bin/tpl COMMAND [ARGUMENTS]
 
-   config                                                            Configure npm registry
-   install --only-theme <theme>                                      Install resources. Use --only-theme to install a specific theme.
-   build <project> --only-theme <theme>                              Build a project. Use --only-theme to build a specific theme.
-   publish <project>                                                 Publish a project
-   deploy <project> --preserve-cache --no-restart                    Deploy the project locally (dev). Use --preserve-cache to keep the cache. Use --no-restart to not restart the server.
-
-ARGUMENTS :
-   project           Name of the project to build                           Required
-                     Possible value: $p
-   --only-theme      Install by compiling only one theme or all             Not required
-                     Possible values: null | $t
+   config                                                            Configure npm registry.
+   install                                                           Install resources.
+   build                                                             Build a package.
+   publish                                                           Publish a package.
+   new <name> <parent-dir>                                           Create and configure new package.
+   deploy --preserve-cache --no-restart                              Deploy the package locally (dev).
+                                                                        * Use --preserve-cache to keep the cache.
+                                                                        * Use --no-restart to not restart the server.
 
 EXAMPLE :
-   # Basic install
+   # Install
    bin/tpl install
 
-   # Install with only default theme
-   bin/tpl install --only-theme default
+   # Build
+   bin/tpl build
 
-   # Publish project
-   bin/tpl publish project
+   # Publish
+   bin/tpl publish
 
-   # Publish with only dark theme
-   bin/tpl publish project --only-theme dark
+   # New
+   ## My struct is /home/user/projects
+   ## I'm in a project that already has the script bin/tpl (ex: /home/user/projects/template.pkg1)
+   ## I want to create template.pkg2
+   bin/tpl new pkg2 /home/user/projects
    "
 }
 
@@ -116,22 +75,20 @@ main() {
    fi
 
    # Methods allowed
-   if [[ ! $1 =~ ^(usage|install|config|publish|build|deploy)$ ]]; then
+   if [[ ! $1 =~ ^(usage|install|config|publish|build|new|deploy)$ ]]; then
       displayError "$1 is not a supported command"
       exit 1
    fi
 
-   checkOrigin "$@"
-   createProjectVars "$@"
-
-   if [[ $1 =~ ^(publish|build)$ ]] && [[ $PROJECT == '' ]]; then
-      displayError "Argument project <<$2>> is missing or not allowed ($PROJECTS)."
-      usage
+   if [[ $1 == 'new' ]] && [[ -z $2 ]]; then
+      displayError "Missing package name"
       exit 1
    fi
 
+   checkOrigin "$@"
+
    # Run command
-   "$@" "$THEME"
+   "$@"
 }
 
 main "$@"
