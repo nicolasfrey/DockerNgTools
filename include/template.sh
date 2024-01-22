@@ -73,7 +73,7 @@ deploy() {
       echo '> Suppression du cache npm / angular'
       dockerRunBash "npm cache clean --force"
       dockerRunBash "rm -rf ${VOLUME_PATH}/app/.angular"
-      dockerRunBash "rm -rf ./app/.angular"
+      dockerRunBash "rm -rf ./.angular"
    fi
 
    if [[ $RESTART == true ]]; then
@@ -85,8 +85,6 @@ deploy() {
 }
 
 new() {
-
-
    if [[ ! -d $2 ]]; then
       displayError "Parent folder $2 not found"
       exit 1
