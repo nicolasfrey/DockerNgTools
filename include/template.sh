@@ -42,34 +42,40 @@ deployDefineArgs() {
 deploy() {
    displayMessage "##### START DEPLOY STAGE"
 
-   if [[ -z ${APP__VOLUME_TEMPLATE_DIR} ]]; then
-      displayError "VOLUME_TEMPLATE_DIR is missing in env"
+   # Check params
+   if [[ -z ${APP__VOLUME_TPL_DIR} ]]; then
+      displayError "VOLUME_TPL_DIR is missing in env"
       exit 1
-   fi
-   local VOLUME_PATH="/home/$USER/${APP__VOLUME_TEMPLATE_DIR}"
-
-   if [[ -z ${APP__LOCAL_TEMPLATE_DIR} ]]; then
+   elif [[ -z ${APP__DEVTPL_PACKAGE_DIR} ]]; then
       displayError "LOCAL_TEMPLATE_DIR is missing in env"
       exit 1
-   fi
-
-   if [[ ! -d ${APP__LOCAL_TEMPLATE_DIR} ]]; then
-      displayError "Folder ${APP__LOCAL_TEMPLATE_DIR} not found"
+   elif [[ ! -d ${APP__DEVTPL_PACKAGE_DIR} ]]; then
+      displayError "Folder ${APP__DEVTPL_PACKAGE_DIR} not found"
+      exit 1
+   elif [[ ! -f "${APP__DEVTPL_PACKAGE_DIR}/app/angular.json" ]]; then
+      displayError "Project ${APP__DEVTPL_PACKAGE_DIR} is not a library"
+      exit 1
+   elif [[ $(cat "${APP__DEVTPL_PACKAGE_DIR}/app/angular.json" | jq -r '.projects | .[] | .projectType') == 'application' ]]; then
+      displayError "Project ${APP__DEVTPL_PACKAGE_DIR} is not a library"
       exit 1
    fi
+
+   # Vars
+   local VOLUME_PATH="/home/$USER/${APP__VOLUME_TPL_DIR}"
+   local PROJECT=$(cat "${APP__DEVTPL_PACKAGE_DIR}/app/angular.json" | jq -r '.projects | keys_unsorted[0] | sub("template-"; "")')
 
    deployDefineArgs "$@"
 
-   PROJECT=$1
-   (cd "${APP__LOCAL_TEMPLATE_DIR}" && build "$@")
-   dockerRunBash "rm -Rf ./node_modules/${APP__NPM_SCOPE}/${1//'wel-'/}/*"
-   dockerRunBash "cp -R ${VOLUME_PATH}/app/dist/${APP__NPM_SCOPE}/${1//'wel-'/}/. ./node_modules/${APP__NPM_SCOPE}/${1//'wel-'/}"
+   # Run
+   (cd "${APP__DEVTPL_PACKAGE_DIR}" && build "$@")
+   dockerRunBash "rm -Rf ./node_modules/${APP__NPM_SCOPE}/$PROJECT/*"
+   dockerRunBash "cp -R ${VOLUME_PATH}/app/dist/. ./node_modules/${APP__NPM_SCOPE}/$PROJECT"
 
    if [[ $PRESERVE_CACHE == false ]]; then
       echo '> Suppression du cache npm / angular'
       dockerRuncli npm cache clean --force
       dockerRunBash "rm -rf ${VOLUME_PATH}/app/.angular"
-      dockerRunBash "rm -rf ./app/.angular"
+      dockerRunBash "rm -rf ./.angular"
    fi
 
    if [[ $RESTART == true ]]; then

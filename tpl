@@ -30,16 +30,18 @@ usage () {
    install                                                           Install resources.
    build                                                             Build a project.
    publish                                                           Publish a project
-   deploy <project> --preserve-cache --no-restart                    Deploy the project locally (dev). Use --preserve-cache to keep the cache. Use --no-restart to not restart the server.
+   deploy --preserve-cache --no-restart                              Deploy the project locally (dev).
+                                                                        * Use --preserve-cache to keep the cache.
+                                                                        * Use --no-restart to not restart the server.
 
 EXAMPLE :
-   # Basic install
+   # Install
    bin/tpl install
 
-   # Basic build
+   # Build
    bin/tpl build
 
-   # Publish project
+   # Publish
    bin/tpl publish
    "
 }
@@ -62,18 +64,12 @@ main() {
    fi
 
    # Methods allowed
-   if [[ ! $1 =~ ^(usage|install|config|publish|build|deploy|var)$ ]]; then
+   if [[ ! $1 =~ ^(usage|install|config|publish|build|deploy)$ ]]; then
       displayError "$1 is not a supported command"
       exit 1
    fi
 
    checkOrigin "$@"
-
-   if [[ $1 =~ ^(deploy)$ ]] && [[ $PROJECT == '' ]]; then
-      displayError "Argument project <<$2>> is missing or not allowed ($PROJECTS)."
-      usage
-      exit 1
-   fi
 
    # Run command
    "$@" "$THEME"
