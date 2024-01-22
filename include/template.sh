@@ -3,24 +3,20 @@
 publish() {
    displayMessage "##### START PUBLISH STAGE"
    build "$@"
-   dockerRunBash "(cd dist/${APP__NPM_REPOSITORY_PATH}/${1//'wel-'/} && npm publish --registry ${APP__REGISTRY})"
+   dockerRunBash "(cd dist && npm publish --registry ${APP__REGISTRY})"
    displayMessage "##### END PUBLISH STAGE"
 }
 
 build() {
    displayMessage "##### START BUILD STAGE"
    install "$@"
-   dockerRuncli npm run build "$PROJECT"
+   dockerRuncli npm run build
    displayMessage "##### END BUILD STAGE"
 }
 
 install() {
    displayMessage "##### START INSTALL STAGE"
-   if [[ ! -f app/scripts/install.sh ]]; then
-      displayError "File app/scripts/install.sh not found"
-   fi
-   createThemeVars "$@"
-   dockerRunBash "scripts/install.sh ${APP__THEMES} $THEME"
+   dockerRuncli npm i
    displayMessage "##### END INSTALL STAGE"
 }
 
