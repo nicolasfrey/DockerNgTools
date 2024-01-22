@@ -6,6 +6,10 @@ source "$(dirname "$0")/include/docker.sh"
 source "$(dirname "$0")/include/template.sh"
 
 checkOrigin() {
+   if [[ $1 == 'new' ]]; then
+      return
+   fi
+
    ISLIB=true
 
    if [[ $(cat app/angular.json | jq -r '.projects | .[] | .projectType') == 'application' ]]; then
@@ -26,11 +30,12 @@ checkOrigin() {
 usage () {
    echo "usage: bin/tpl COMMAND [ARGUMENTS]
 
-   config                                                            Configure npm registry
+   config                                                            Configure npm registry.
    install                                                           Install resources.
-   build                                                             Build a project.
-   publish                                                           Publish a project
-   deploy --preserve-cache --no-restart                              Deploy the project locally (dev).
+   build                                                             Build a package.
+   publish                                                           Publish a package.
+   new <name> <parent-dir>                                           Create and configure new package.
+   deploy --preserve-cache --no-restart                              Deploy the package locally (dev).
                                                                         * Use --preserve-cache to keep the cache.
                                                                         * Use --no-restart to not restart the server.
 
@@ -43,6 +48,12 @@ EXAMPLE :
 
    # Publish
    bin/tpl publish
+
+   # New
+   ## My struct is /home/user/projects
+   ## I'm in a project that already has the script bin/tpl (ex: /home/user/projects/template.pkg1)
+   ## I want to create template.pkg2
+   bin/tpl new pkg2 /home/user/projects
    "
 }
 
@@ -64,15 +75,20 @@ main() {
    fi
 
    # Methods allowed
-   if [[ ! $1 =~ ^(usage|install|config|publish|build|deploy)$ ]]; then
+   if [[ ! $1 =~ ^(usage|install|config|publish|build|new|deploy)$ ]]; then
       displayError "$1 is not a supported command"
+      exit 1
+   fi
+
+   if [[ $1 == 'new' ]] && [[ -z $2 ]]; then
+      displayError "Missing package name"
       exit 1
    fi
 
    checkOrigin "$@"
 
    # Run command
-   "$@" "$THEME"
+   "$@"
 }
 
 main "$@"
