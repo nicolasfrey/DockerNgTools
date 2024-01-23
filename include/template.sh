@@ -153,9 +153,9 @@ new() {
    rm package.json || exit 1
 
    echo '> Add install entrypoint scripts/install.sh'
-   mkdir scripts || exit 1
-   touch scripts/install.sh || exit 1
-   echo '#!/usr/bin/env bash' > scripts/install.sh
+   dockerRunBash "mkdir scripts" || exit 1
+   dockerRunBash "touch scripts/install.sh" || exit 1
+   dockerRunBash "echo '#!/usr/bin/env bash' > scripts/install.sh" || exit 1
 
    displayMessage 'Add dev libs'
    echo "> Add prettier"
