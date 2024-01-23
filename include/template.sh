@@ -2,25 +2,24 @@
 
 publish() {
    displayMessage "##### START PUBLISH STAGE"
-   build "$@"
-   dockerRunBash "(cd dist/${APP__NPM_REPOSITORY_PATH}/${1//'wel-'/} && npm publish --registry ${APP__REGISTRY})"
+   build
+   dockerRunBash "(cd dist && npm publish --registry ${APP__REGISTRY})"
    displayMessage "##### END PUBLISH STAGE"
 }
 
 build() {
    displayMessage "##### START BUILD STAGE"
-   install "$@"
-   dockerRunNpm "run build $PROJECT"
+   install
+   dockerRunNpm "run build"
    displayMessage "##### END BUILD STAGE"
 }
 
 install() {
    displayMessage "##### START INSTALL STAGE"
-   if [[ ! -f app/scripts/install.sh ]]; then
-      displayError "File app/scripts/install.sh not found"
+   dockerRunNpm "install"
+   if [[ -f app/scripts/install.sh ]]; then
+      dockerRunBash "scripts/install.sh"
    fi
-   createThemeVars "$@"
-   dockerRunBash "scripts/install.sh ${APP__THEMES} $THEME"
    displayMessage "##### END INSTALL STAGE"
 }
 
@@ -46,39 +45,36 @@ deployDefineArgs() {
 deploy() {
    displayMessage "##### START DEPLOY STAGE"
 
-   if [[ -z ${APP__VOLUME_TEMPLATE_DIR} ]]; then
-      displayError "VOLUME_TEMPLATE_DIR is missing in env"
+   if [[ -z ${APP__VOLUME_PACKAGE_DIR} ]]; then
+      displayError "VOLUME_PACKAGE_DIR is missing in env"
+      exit 1
+   elif [[ -z ${APP__LOCAL_PACKAGE_DIR} ]]; then
+      displayError "LOCAL_PACKAGE_DIR is missing in env"
+      exit 1
+   elif [[ ! -d ${APP__LOCAL_PACKAGE_DIR} ]]; then
+      displayError "Folder ${APP__LOCAL_PACKAGE_DIR} not found"
       exit 1
    fi
-   local VOLUME_PATH="/home/$USER/${APP__VOLUME_TEMPLATE_DIR}"
 
-   if [[ -z ${APP__LOCAL_TEMPLATE_DIR} ]]; then
-      displayError "LOCAL_TEMPLATE_DIR is missing in env"
-      exit 1
-   fi
-
-   if [[ ! -d ${APP__LOCAL_TEMPLATE_DIR} ]]; then
-      displayError "Folder ${APP__LOCAL_TEMPLATE_DIR} not found"
-      exit 1
-   fi
+   local VOLUME_PATH="/home/$USER/${APP__VOLUME_PACKAGE_DIR}"
 
    deployDefineArgs "$@"
 
-   PROJECT=$1
-   (cd "${APP__LOCAL_TEMPLATE_DIR}" && build "$@")
-   dockerRunBash "rm -Rf ./node_modules/${APP__NPM_SCOPE}/${1//'wel-'/}/*"
-   dockerRunBash "cp -R ${VOLUME_PATH}/app/dist/${APP__NPM_SCOPE}/${1//'wel-'/}/. ./node_modules/${APP__NPM_SCOPE}/${1//'wel-'/}"
+   (cd "${APP__LOCAL_PACKAGE_DIR}" && build)
+   local PKG_NAME=$(jq -r '.name' "${APP__LOCAL_PACKAGE_DIR}"/app/dist/package.json  | sed "s|${APP__NPM_SCOPE}/||")
+   dockerRunBash "rm -Rf ./node_modules/${APP__NPM_SCOPE}/$PKG_NAME/*"
+   dockerRunBash "cp -R ${VOLUME_PATH}/app/dist/. ./node_modules/${APP__NPM_SCOPE}/$PKG_NAME"
 
    if [[ $PRESERVE_CACHE == false ]]; then
       echo '> Suppression du cache npm / angular'
-      dockerRunBash "npm cache clean --force"
+      dockerRunNpm "cache clean --force"
       dockerRunBash "rm -rf ${VOLUME_PATH}/app/.angular"
       dockerRunBash "rm -rf ./.angular"
    fi
 
    if [[ $RESTART == true ]]; then
       echo '> Redémarrage du service serve'
-      dockerRunBash "npm run start"
+      dockerRunNpm "run start"
    fi
 
    displayMessage "##### END DEPLOY STAGE"
@@ -155,6 +151,11 @@ new() {
 
    echo '> Remove the tmp file package.json'
    rm package.json || exit 1
+
+   echo '> Add install entrypoint scripts/install.sh'
+   mkdir scripts || exit 1
+   touch scripts/install.sh || exit 1
+   echo '#!/usr/bin/env bash' > scripts/install.sh
 
    displayMessage 'Add dev libs'
    echo "> Add prettier"
