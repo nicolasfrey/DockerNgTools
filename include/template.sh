@@ -103,6 +103,7 @@ new() {
    displayMessage '>>> Create bases files'
    cp "$TEMPLATES_PATH/docker-compose.yml.tpl" "$PKG_NAME/docker-compose.yml" && echo "> $2/$PKG_NAME/docker-compose.yml"
    cp "$TEMPLATES_PATH/package.json.tpl" "$PKG_NAME/package.json" && echo "> $2/$PKG_NAME/package.json"
+   cp "$TEMPLATES_PATH/package.json.tpl" "$PKG_NAME/package.json" && echo "> $2/$PKG_NAME/app/package.json"
    cp "$BASE_PATH/.env" "$PKG_NAME/.env" && echo "> $2/$PKG_NAME/.env"
 
    cd "$PKG_NAME" || exit 2 # Déplacement project dir
@@ -111,25 +112,28 @@ new() {
    {
       echo "FROM ${APP__ARTIFACTORY_PATH}${APP__DOCKER_REPOSITORY_PATH}node/18:latest"
       echo "USER root"
-      echo "USER RUN npm i -g @angular/cli@$ANGULAR_CLI_VERSION"
+      echo "RUN npm i -g @angular/cli@$ANGULAR_CLI_VERSION node-jq"
       echo "USER node"
    } > ".docker/node/Dockerfile" && echo "> $2/$PKG_NAME/.docker/node/Dockerfile" || exit 1
+
+   displayMessage "Build node image (force)"
+   docker compose up -d --build
 
    displayMessage "Add DockerNgTools"
    git clone --branch master https://github.com/nicolasfrey/DockerNgTools.git bin && bin/app config || exit 1
 
    displayMessage 'Create angular project (library)'
-   dockerRunBash "ng new $1 --no-create-application --directory=. --skip-install" || exit 1
+   dockerRunBash "ng new $1 --no-create-application --directory=. --skip-install --interactive=false" || exit 1
 
    displayMessage 'Generate lib'
-   dockerRunBash "ng generate library $LIB_NAME --skip-install --project-root=projects" || exit 1
+   dockerRunBash "ng generate library $LIB_NAME --skip-install --project-root=projects --interactive=false" || exit 1
 
    displayMessage 'Configuration'
    echo '> Rewriting the file app/projects/ng-package.json'
-   jq --arg new_dest '../dist' '.dest = $new_dest' app/projects/ng-package.json > temp.json && mv temp.json app/projects/ng-package.json || exit 1
+   dockerRunBash "jq --arg new_dest '../dist' '.dest = \$new_dest' projects/ng-package.json > temp.json && mv temp.json projects/ng-package.json" || exit 1
 
    echo '> Rewriting the file app/projects/package.json'
-   jq --arg new_name "${APP__NPM_SCOPE}/$1" '.name = $new_name' app/projects/package.json > temp.json && mv temp.json app/projects/package.json || exit 1
+   dockerRunBash "jq --arg new_name ${APP__NPM_SCOPE}/$1 '.name = \$new_name' projects/package.json > temp.json && mv temp.json projects/package.json" || exit 1
 
    echo '> Rewriting the file app/projects/tsconfig.lib.json'
    cp "$TEMPLATES_PATH/tsconfig.lib.json.tpl" app/projects/tsconfig.lib.json || exit 1
@@ -144,10 +148,10 @@ new() {
    cp "$TEMPLATES_PATH/.prettierrc.tpl" app/.prettierrc || exit 1
 
    echo '> Rewriting the file app/angular.json'
-   jq '.projects."'"$LIB_NAME"'"|.cli.schematicCollections += ["@angular-eslint/schematics"]' app/angular.json > app/angular.json.tmp && mv app/angular.json.tmp app/angular.json
+   dockerRunBash "jq --argjson s '{\"cli\": { \"schematicCollections\": [\"@angular-eslint/schematics\"] }}' '.projects.\"template-test\" += \$s' angular.json > angular.json.tmp && mv angular.json.tmp angular.json"  || exit 1
 
    echo '> Rewriting the file app/package.json'
-   jq --arg new_name "$PKG_NAME" '.name = $new_name' app/package.json > temp.json && mv temp.json app/package.json || exit 1
+   dockerRunBash "jq --arg new_name $PKG_NAME '.name = \$new_name' package.json > temp.json && mv temp.json package.json" || exit 1
 
    echo '> Remove the tmp file package.json'
    rm package.json || exit 1
@@ -163,7 +167,7 @@ new() {
    echo "> Add @angular-eslint/schematics"
    dockerRunNpm "i --save-dev prettier @types/node @angular-eslint/schematics@$ANGULAR_CLI_VERSION" || exit 1
    echo "> Add prettier commands in app/package.json"
-   jq '.scripts += { "format:check": "prettier --list-different 'projects/**/*.ts'", "format:write": "prettier --write 'projects/**/*.ts'" }' app/package.json > app/package.json.tmp && mv app/package.json.tmp app/package.json || exit 1
+   dockerRunBash "jq '.scripts += { \"format:check\": \"prettier --list-different 'projects/**/*.ts'\", \"format:write\": \"prettier --write 'projects/**/*.ts'\" }' package.json > package.json.tmp && mv package.json.tmp package.json" || exit 1
 
    displayMessage "Run it\r\n    >>> cd $2/$PKG_NAME && bin/app init"
 }
