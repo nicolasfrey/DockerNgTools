@@ -81,6 +81,12 @@ deploy() {
 }
 
 new() {
+   PKG_OK=$(dpkg-query -W --showformat='${Status}\n' jq|grep "install ok installed")
+   if [ "" = "$PKG_OK" ]; then
+      displayError "Please install jq package : sudo apt install jq"
+      exit;
+   fi
+
    if [[ ! -d $2 ]]; then
       displayError "Parent folder $2 not found"
       exit 1
