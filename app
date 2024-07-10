@@ -3,6 +3,7 @@
 source "$(dirname "$0")/include/common.sh"
 source "$(dirname "$0")/include/docker.sh"
 source "$(dirname "$0")/include/package.sh"
+source "$(dirname "$0")/include/template.sh"
 
 # Start docker project
 start () {
@@ -128,6 +129,8 @@ usage () {
     npm                                            Use NPM inside the app container
     ng                                             Use the Angular console
     bash                                           Use bash inside the app container
+
+    installtpl <branch>                            Add bintpl project instance of submodule git (default branch : master)
     "
 }
 
@@ -137,7 +140,7 @@ main () {
       exit 0
    fi
 
-   if [[ ! $1 =~ ^(selfupdate|version|config|init|destroy|start|stop|restart|npm|ng|bash)$ ]]; then
+   if [[ ! $1 =~ ^(selfupdate|version|config|init|destroy|start|stop|restart|npm|ng|bash|installtpl)$ ]]; then
       echo "$1 is not a supported command"
       exit 1
    fi
