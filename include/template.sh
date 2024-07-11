@@ -22,7 +22,7 @@ installtpl() {
 
    echo ' '
    displayMessage 'Install'
-	git submodule add ssh://git@bitbucket.groupe.pharmagest.com:7999/welsitpl/bin.template.git bintpl
+	git submodule add ssh://git@${APP__BITBUCKET_PATH}/bin.template.git bintpl
 
    (
       cd bintpl && 
