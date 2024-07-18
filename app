@@ -4,6 +4,7 @@ source "$(dirname "$0")/include/common.sh"
 source "$(dirname "$0")/include/docker.sh"
 source "$(dirname "$0")/include/package.sh"
 source "$(dirname "$0")/include/template.sh"
+source "$(dirname "$0")/include/jenkins.sh"
 
 # Start docker project
 start () {
@@ -111,6 +112,10 @@ selfupdate () {
    packageSelfUpdate
 }
 
+jenkins() {
+   jenkins-"$1"
+}
+
 usage () {
     echo "usage: bin/app COMMAND [ARGUMENTS]
 
@@ -120,6 +125,9 @@ usage () {
     init                                           Initialize project
     config --destroy                               Initialize bin/app. Add --destroy for clean project
     destroy                                        Remove all the project Docker containers with their volumes
+
+    jenkins check                                  Check if jenkins is up to date
+    jenkins update                                 Reload Jenkinsfile
 
     start --force-recreate                         Start project
     stop --destroy --full --all                    Stop project. Add --destroy for remove images and orphans.
@@ -140,8 +148,13 @@ main () {
       exit 0
    fi
 
-   if [[ ! $1 =~ ^(selfupdate|version|config|init|destroy|start|stop|restart|npm|ng|bash|installtpl)$ ]]; then
+   if [[ ! $1 =~ ^(selfupdate|version|config|init|destroy|start|stop|restart|npm|ng|bash|installtpl|jenkins)$ ]]; then
       echo "$1 is not a supported command"
+      exit 1
+   fi
+
+   if [[ $1 == 'jenkins' && ! $2 =~ ^(check|update)$ ]]; then
+      echo "$1 $2 is not a supported command"
       exit 1
    fi
 
