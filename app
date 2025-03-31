@@ -58,8 +58,8 @@ init () {
    echo ""
 
    displayMessage "  Project initialized successfully.
-      - HTTP: http://${APP__APP_NAME}.local.gd
-      - SSH (for tunnel): ssh://proxy:pass@ssh.local.gd:2222
+      - HTTP: http://${APP__APP_NAME}.127x.me
+      - SSH (for tunnel): ssh://proxy:pass@ssh.127x.me:2222
 
       You can run the following command to start the project: 'bin/app npm start'
    "
